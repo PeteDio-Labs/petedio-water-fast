@@ -14,6 +14,7 @@ import type {
   Fast,
   LogWaterBody,
   Me,
+  PersonalStats,
   StartFastBody,
   WaterEntry,
 } from "@shared/types.ts";
@@ -73,10 +74,90 @@ function delay<T>(value: T): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(value), 140));
 }
 
+/**
+ * Finished fasts, so the demo can show the stats page with something in it — and so
+ * breaking the seeded fast visibly lands in history rather than vanishing.
+ */
+interface FinishedRow {
+  id: string;
+  startedAt: string;
+  targetEndAt: string;
+  endedAt: string;
+  goalOz: number;
+  totalOz: number;
+}
+
+function seedHistory(): FinishedRow[] {
+  const midnight = midnightToday().getTime();
+  const day = 24 * 3_600_000;
+  const finished = (daysAgo: number, plannedH: number, ranH: number, oz: number): FinishedRow => {
+    const started = midnight - daysAgo * day;
+    return {
+      id: id("f"),
+      startedAt: new Date(started).toISOString(),
+      targetEndAt: new Date(started + plannedH * 3_600_000).toISOString(),
+      endedAt: new Date(started + ranH * 3_600_000).toISOString(),
+      goalOz: DEFAULT_GOAL_OZ,
+      totalOz: oz,
+    };
+  };
+  return [
+    finished(30, 24, 24, 118.3), // ran the full 24
+    finished(16, 36, 21.5, 84.5), // broken early
+    finished(6, 48, 41, 152.1), // the long one
+  ];
+}
+
+/**
+ * Mirrors `summarizeFasts` in the backend's domain.ts. Duplicated rather than imported
+ * because the frontend never depends on backend code — `shared/types.ts` is the only thing
+ * both sides share, and this file exists purely so demo.html can run with no server.
+ */
+function summarize(rows: readonly FinishedRow[]): PersonalStats {
+  const oldestFirst = [...rows]
+    .map((r) => {
+      const started = new Date(r.startedAt).getTime();
+      const ended = new Date(r.endedAt).getTime();
+      return {
+        ...r,
+        durationMs: Math.max(0, ended - started),
+        reachedTarget: ended >= new Date(r.targetEndAt).getTime(),
+      };
+    })
+    .sort(
+      (a, b) =>
+        new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime() ||
+        new Date(a.endedAt).getTime() - new Date(b.endedAt).getTime() ||
+        a.id.localeCompare(b.id),
+    );
+
+  let longest: PersonalStats["longest"] = null;
+  let totalFastedMs = 0;
+  let totalOz = 0;
+  let reachedTargetCount = 0;
+  for (const f of oldestFirst) {
+    if (!longest || f.durationMs > longest.durationMs) longest = f;
+    totalFastedMs += f.durationMs;
+    totalOz += f.totalOz;
+    if (f.reachedTarget) reachedTargetCount += 1;
+  }
+
+  return {
+    history: [...oldestFirst].reverse(),
+    longest,
+    fastsFinished: oldestFirst.length,
+    totalFastedMs,
+    averageFastedMs: oldestFirst.length ? Math.round(totalFastedMs / oldestFirst.length) : 0,
+    totalOz: round1(totalOz),
+    reachedTargetCount,
+  };
+}
+
 export function createMockBackend(scenario: Scenario): Backend {
-  const state: { displayName: string; fast: Fast | null } = {
+  const state: { displayName: string; fast: Fast | null; finished: FinishedRow[] } = {
     displayName: "Pedro",
     fast: scenario === "fasting" ? seedFast() : null,
+    finished: seedHistory(),
   };
 
   const sonia = (() => {
@@ -123,6 +204,15 @@ export function createMockBackend(scenario: Scenario): Backend {
         return Promise.reject(new Error("No active fast with that id"));
       }
       const ended: Fast = { ...state.fast, endedAt: new Date().toISOString() };
+      // The point of the feature: a broken fast is kept, not discarded.
+      state.finished.push({
+        id: ended.id,
+        startedAt: ended.startedAt,
+        targetEndAt: ended.targetEndAt,
+        endedAt: ended.endedAt!,
+        goalOz: ended.goalOz,
+        totalOz: ended.totalOz,
+      });
       state.fast = null;
       return delay(ended);
     },
@@ -151,5 +241,7 @@ export function createMockBackend(scenario: Scenario): Backend {
     },
 
     family: (): Promise<FamilyView> => delay({ members: [sonia] }),
+
+    stats: (): Promise<PersonalStats> => delay(summarize(state.finished)),
   };
 }

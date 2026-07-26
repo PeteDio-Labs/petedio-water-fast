@@ -1,11 +1,12 @@
 import { useState } from "preact/hooks";
-import type { FamilyMember, Fast } from "@shared/types.ts";
+import type { FamilyMember, Fast, PersonalStats } from "@shared/types.ts";
 import { GlassCard } from "../components/GlassCard.tsx";
 import { progressOf, useNow } from "../lib/clock.ts";
 import { goalNote } from "../lib/format.ts";
 import { Countdown } from "./Countdown.tsx";
 import { FamilyStrip } from "./FamilyStrip.tsx";
 import { LogWater } from "./LogWater.tsx";
+import { RecordRow } from "./RecordRow.tsx";
 import { Timeline } from "./Timeline.tsx";
 import { Vessel } from "./Vessel.tsx";
 import { WaterLog } from "./WaterLog.tsx";
@@ -24,6 +25,8 @@ export function StatPage(props: {
   onLogWater: (oz: number) => void;
   onDeleteEntry: (id: string) => void;
   onEndFast: () => void;
+  stats: PersonalStats | null;
+  onOpenStats: () => void;
 }) {
   const now = useNow();
   const progress = progressOf(props.fast.startedAt, props.fast.targetEndAt, now);
@@ -76,6 +79,8 @@ export function StatPage(props: {
         </div>
 
         <FamilyStrip members={props.family} />
+
+        <RecordRow stats={props.stats} onOpen={props.onOpenStats} />
 
         <div>
           {confirmingEnd ? (

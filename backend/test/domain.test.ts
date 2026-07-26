@@ -7,9 +7,11 @@ import { describe, expect, it } from "bun:test";
 import { BOTTLE_OZ, DEFAULT_GOAL_OZ, GALLON_OZ } from "../../shared/types.ts";
 import {
   defaultDisplayName,
+  describeFinishedFast,
   fastProgress,
   round1,
   sumOz,
+  summarizeFasts,
   toBottles,
   validateDisplayName,
   validateLogWater,
@@ -189,5 +191,91 @@ describe("display names", () => {
     expect(validateDisplayName("   ").ok).toBe(false);
     expect(validateDisplayName("x".repeat(41)).ok).toBe(false);
     expect(validateDisplayName(42).ok).toBe(false);
+  });
+});
+
+describe("personal stats", () => {
+  const H = 3_600_000;
+
+  /** A finished fast: started at `startIso`, planned `plannedH`, actually ran `ranH`. */
+  function finished(id: string, startIso: string, plannedH: number, ranH: number, oz = 0) {
+    const start = new Date(startIso).getTime();
+    return {
+      id,
+      startedAt: new Date(start).toISOString(),
+      targetEndAt: new Date(start + plannedH * H).toISOString(),
+      endedAt: new Date(start + ranH * H).toISOString(),
+      goalOz: DEFAULT_GOAL_OZ,
+      totalOz: oz,
+    };
+  }
+
+  it("measures a fast by what it actually ran, not what was planned", () => {
+    // Broken at hour 22 of a planned 36: the record is 22, not 36.
+    const broken = describeFinishedFast(finished("a", "2026-07-26T07:00:00Z", 36, 22));
+    expect(broken.durationMs).toBe(22 * H);
+    expect(broken.reachedTarget).toBe(false);
+  });
+
+  it("counts a fast carried past its target as having reached it", () => {
+    const over = describeFinishedFast(finished("a", "2026-07-26T07:00:00Z", 36, 38));
+    expect(over.durationMs).toBe(38 * H);
+    expect(over.reachedTarget).toBe(true);
+  });
+
+  it("treats ending exactly on target as reaching it", () => {
+    expect(describeFinishedFast(finished("a", "2026-07-26T07:00:00Z", 36, 36)).reachedTarget)
+      .toBe(true);
+  });
+
+  it("never mints a negative record from an out-of-order pair", () => {
+    const backwards = {
+      ...finished("a", "2026-07-26T07:00:00Z", 36, 36),
+      endedAt: "2026-07-25T07:00:00Z",
+    };
+    expect(describeFinishedFast(backwards).durationMs).toBe(0);
+  });
+
+  it("rolls the whole history up", () => {
+    const stats = summarizeFasts([
+      finished("a", "2026-06-01T07:00:00Z", 24, 24, 100),
+      finished("b", "2026-07-01T07:00:00Z", 36, 20, 80.05),
+      finished("c", "2026-07-26T07:00:00Z", 36, 38, 150),
+    ]);
+
+    expect(stats.fastsFinished).toBe(3);
+    expect(stats.longest?.id).toBe("c");
+    expect(stats.longest?.durationMs).toBe(38 * H);
+    expect(stats.totalFastedMs).toBe(82 * H);
+    expect(stats.averageFastedMs).toBe(Math.round((82 * H) / 3));
+    expect(stats.reachedTargetCount).toBe(2); // a ran its full 24, c overran; b was broken
+    expect(stats.totalOz).toBe(330.1); // rounded once at the end, not per fast
+  });
+
+  it("orders history newest first regardless of the order it is given", () => {
+    const stats = summarizeFasts([
+      finished("old", "2026-06-01T07:00:00Z", 24, 24),
+      finished("new", "2026-07-26T07:00:00Z", 24, 24),
+      finished("mid", "2026-07-01T07:00:00Z", 24, 24),
+    ]);
+    expect(stats.history.map((f) => f.id)).toEqual(["new", "mid", "old"]);
+  });
+
+  it("keeps the earlier fast when two are exactly as long", () => {
+    const stats = summarizeFasts([
+      finished("later", "2026-07-26T07:00:00Z", 24, 24),
+      finished("first", "2026-06-01T07:00:00Z", 24, 24),
+    ]);
+    expect(stats.longest?.id).toBe("first");
+  });
+
+  it("has no record before the first fast is broken", () => {
+    const stats = summarizeFasts([]);
+    expect(stats.longest).toBeNull();
+    expect(stats.fastsFinished).toBe(0);
+    expect(stats.averageFastedMs).toBe(0);
+    expect(stats.totalFastedMs).toBe(0);
+    expect(stats.totalOz).toBe(0);
+    expect(stats.history).toEqual([]);
   });
 });

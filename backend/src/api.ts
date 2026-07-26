@@ -11,10 +11,11 @@
  *    change that only lands on one side fails to compile.
  */
 import type { SQL } from "bun";
-import type { Fast, FamilyView, Me, WaterEntry } from "../../shared/types.ts";
+import type { Fast, FamilyView, Me, PersonalStats, WaterEntry } from "../../shared/types.ts";
 import { db } from "./db.ts";
 import {
   defaultDisplayName,
+  summarizeFasts,
   validateDisplayName,
   validateLogWater,
   validateStartFast,
@@ -28,6 +29,7 @@ import {
   findOrCreateUser,
   getActiveFast,
   getFamily,
+  getFinishedFasts,
   getOwnedFast,
   setDisplayName,
   startFast,
@@ -94,6 +96,13 @@ export async function handleApi(request: Request, deps: ApiDeps = {}): Promise<R
   // GET /api/me — the routing decision: active fast, or start-a-fast screen.
   if (path === "/api/me" && method === "GET") {
     return json(await buildMe(user, sql));
+  }
+
+  // GET /api/me/stats — personal records over finished fasts. Nobody else's data is
+  // reachable from here; the query is scoped to this user like every other read.
+  if (path === "/api/me/stats" && method === "GET") {
+    const stats: PersonalStats = summarizeFasts(await getFinishedFasts(user.id, sql));
+    return json(stats);
   }
 
   // PATCH /api/me — set the name the rest of the family sees.

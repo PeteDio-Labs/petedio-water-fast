@@ -15,7 +15,7 @@
  */
 import { SQL } from "bun";
 import { afterAll, beforeEach, describe, expect, it } from "bun:test";
-import type { Fast, FamilyView, Me, WaterEntry } from "../../shared/types.ts";
+import type { Fast, FamilyView, Me, PersonalStats, WaterEntry } from "../../shared/types.ts";
 import { handleApi, type ApiDeps } from "../src/api.ts";
 
 const TEST_DATABASE_URL =
@@ -314,5 +314,116 @@ describe("GET /api/family", () => {
 
     const view = (await (await call(PEDRO, "GET", "/api/family")).json()) as FamilyView;
     expect(view.members[0]!.totalOz).toBe(0);
+  });
+});
+
+describe("GET /api/me/stats", () => {
+  const H = 3_600_000;
+
+  async function statsFor(email: string): Promise<PersonalStats> {
+    const res = await call(email, "GET", "/api/me/stats");
+    expect(res.status).toBe(200);
+    return res.json() as Promise<PersonalStats>;
+  }
+
+  it("is empty before any fast has been finished", async () => {
+    await startFastAs(PEDRO); // in progress, so it must NOT count
+    const stats = await statsFor(PEDRO);
+    expect(stats.longest).toBeNull();
+    expect(stats.fastsFinished).toBe(0);
+    expect(stats.history).toEqual([]);
+    expect(stats.totalFastedMs).toBe(0);
+  });
+
+  it("keeps a broken fast, measured by how long it actually ran", async () => {
+    const fast = await startFastAs(PEDRO, 36);
+    await call(PEDRO, "POST", `/api/fasts/${fast.id}/water`, { oz: 16.9 });
+    await call(PEDRO, "POST", `/api/fasts/${fast.id}/end`); // at NOW — 12 h in
+
+    const stats = await statsFor(PEDRO);
+    expect(stats.fastsFinished).toBe(1);
+    expect(stats.history).toHaveLength(1);
+
+    const kept = stats.history[0]!;
+    expect(kept.id).toBe(fast.id);
+    expect(kept.durationMs).toBe(12 * H); // broken at 12 of a planned 36
+    expect(kept.reachedTarget).toBe(false);
+    expect(kept.totalOz).toBe(16.9);
+    expect(stats.longest?.id).toBe(fast.id);
+  });
+
+  it("picks the longest across several, newest first in history", async () => {
+    // Distinct starts: the earlier fast runs 30 h, the later one is broken at 12 h, so
+    // "longest" and "newest" are deliberately different fasts.
+    const earlyStart = new Date(START.getTime() - 48 * H);
+    // Created with the clock back then too: a fast whose planned end is already in the past
+    // is rejected at 400, which is correct and would otherwise fail this test obscurely.
+    const created = await call(PEDRO, "POST", "/api/fasts", {
+      hours: 36,
+      goalOz: 144.9,
+      startedAt: earlyStart.toISOString(),
+    }, new Date(earlyStart.getTime() + H));
+    expect(created.status).toBe(201);
+    const early = (await created.json()) as Fast;
+    await call(PEDRO, "POST", `/api/fasts/${early.id}/end`, undefined,
+      new Date(earlyStart.getTime() + 30 * H));
+
+    const recent = await startFastAs(PEDRO, 36);
+    await call(PEDRO, "POST", `/api/fasts/${recent.id}/end`); // 12 h
+
+    const stats = await statsFor(PEDRO);
+    expect(stats.fastsFinished).toBe(2);
+    expect(stats.longest?.id).toBe(early.id);
+    expect(stats.longest?.durationMs).toBe(30 * H);
+    expect(stats.totalFastedMs).toBe(42 * H);
+    expect(stats.history.map((f) => f.id)).toEqual([recent.id, early.id]);
+  });
+
+  it("orders two fasts sharing a start instant the same way every read", async () => {
+    // Reachable for real: end a fast, then start another backdated to the same instant.
+    const first = await startFastAs(PEDRO, 36);
+    await call(PEDRO, "POST", `/api/fasts/${first.id}/end`);
+    const second = await startFastAs(PEDRO, 36);
+    await call(PEDRO, "POST", `/api/fasts/${second.id}/end`,
+      undefined, new Date(START.getTime() + 20 * H));
+
+    const seen = new Set<string>();
+    for (let i = 0; i < 5; i++) {
+      seen.add((await statsFor(PEDRO)).history.map((f) => f.id).join(","));
+    }
+    expect(seen.size).toBe(1);
+  });
+
+  it("counts a fast carried to its planned first meal as reaching target", async () => {
+    const fast = await startFastAs(PEDRO, 36);
+    const atTarget = new Date(START.getTime() + 36 * H);
+    await call(PEDRO, "POST", `/api/fasts/${fast.id}/end`, undefined, atTarget);
+
+    const stats = await statsFor(PEDRO);
+    expect(stats.reachedTargetCount).toBe(1);
+    expect(stats.history[0]!.reachedTarget).toBe(true);
+  });
+
+  it("never shows one person's history to another", async () => {
+    const pedros = await startFastAs(PEDRO, 36);
+    await call(PEDRO, "POST", `/api/fasts/${pedros.id}/water`, { oz: 33.8 });
+    await call(PEDRO, "POST", `/api/fasts/${pedros.id}/end`);
+
+    const sonias = await statsFor(SONIA);
+    expect(sonias.fastsFinished).toBe(0);
+    expect(sonias.longest).toBeNull();
+    expect(sonias.history).toEqual([]);
+
+    // And Pedro still sees his own.
+    expect((await statsFor(PEDRO)).fastsFinished).toBe(1);
+  });
+
+  it("401s without an identity, like every other route", async () => {
+    const res = await handleApi(request("GET", "/api/me/stats"), {
+      sql,
+      now: () => NOW,
+      resolveIdentity: async () => null,
+    });
+    expect(res?.status).toBe(401);
   });
 });
