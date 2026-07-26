@@ -1,6 +1,7 @@
 import { useState } from "preact/hooks";
 import type { FamilyMember, Fast, PersonalStats } from "@shared/types.ts";
 import { GlassCard } from "../components/GlassCard.tsx";
+import { Modal } from "../components/Modal.tsx";
 import { progressOf, useNow } from "../lib/clock.ts";
 import { goalNote } from "../lib/format.ts";
 import { Countdown } from "./Countdown.tsx";
@@ -83,39 +84,51 @@ export function StatPage(props: {
         <RecordRow stats={props.stats} onOpen={props.onOpenStats} />
 
         <div>
-          {confirmingEnd ? (
-            <GlassCard>
-              <div class="card-pad">
-                <p style={{ margin: "0 0 4px", fontSize: "15px", fontWeight: 600 }}>
-                  {progress.complete ? "Finish this fast?" : "Break this fast early?"}
-                </p>
-                <p style={{ margin: 0, fontSize: "13.5px", color: "var(--label-2)" }}>
-                  Your entries are kept. You can start a new fast straight after.
-                </p>
-                <button
-                  type="button"
-                  class="big-btn danger"
-                  disabled={props.busy}
-                  onClick={props.onEndFast}
-                >
-                  {progress.complete ? "Finish fast" : "Break fast"}
-                </button>
-                <button
-                  type="button"
-                  class="big-btn plain"
-                  onClick={() => setConfirmingEnd(false)}
-                >
-                  Keep going
-                </button>
-              </div>
-            </GlassCard>
-          ) : (
-            <button type="button" class="big-btn plain" onClick={() => setConfirmingEnd(true)}>
-              {progress.complete ? "Finish fast" : "Break fast"}
-            </button>
-          )}
+          <button type="button" class="big-btn plain" onClick={() => setConfirmingEnd(true)}>
+            {progress.complete ? "Finish fast" : "Break fast"}
+          </button>
         </div>
       </div>
+
+      {/* Confirming closes the modal before the request goes out, so a failure lands on the
+          error bar where it can actually be seen — the top layer paints over it. */}
+      <Modal
+        open={confirmingEnd}
+        onClose={() => setConfirmingEnd(false)}
+        labelledBy="end-fast-title"
+      >
+        <GlassCard>
+          <div class="card-pad">
+            <p class="modal-title" id="end-fast-title">
+              {progress.complete ? "Finish this fast?" : "Break this fast early?"}
+            </p>
+            <p class="modal-body">
+              Your entries are kept, and the fast goes to your stats.
+            </p>
+            <button
+              type="button"
+              class="big-btn danger"
+              disabled={props.busy}
+              onClick={() => {
+                setConfirmingEnd(false);
+                props.onEndFast();
+              }}
+            >
+              {progress.complete ? "Finish fast" : "Break fast"}
+            </button>
+            {/* Focus the safe option, not the destructive one: `showModal` otherwise lands
+                on the first focusable child, and Enter would break the fast outright. */}
+            <button
+              type="button"
+              class="big-btn plain"
+              autofocus
+              onClick={() => setConfirmingEnd(false)}
+            >
+              Keep going
+            </button>
+          </div>
+        </GlassCard>
+      </Modal>
     </>
   );
 }

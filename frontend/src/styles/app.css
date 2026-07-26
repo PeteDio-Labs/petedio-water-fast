@@ -488,3 +488,42 @@ ul.history li .oz { flex: 0 0 auto; color: var(--label-2); font-size: 13px; }
    disappears per row makes the list ragged. */
 ul.history li .flag { flex: 0 0 auto; width: 14px; text-align: center; color: transparent; }
 ul.history li .flag.on { color: var(--water); }
+
+/* ---- modal ---- */
+
+/* The UA gives <dialog> a border, padding, a white background and an auto margin that
+   centres the *box* rather than its contents; all four are cleared so the element can be a
+   full-viewport flex container with the panel centred inside it. */
+dialog.modal {
+  margin: 0; padding: 16px; border: none; background: none; color: inherit;
+  width: 100vw; max-width: 100vw;
+  /* dvh, not vh: on a phone vh includes the retractable browser chrome, which pushed the
+     panel off-centre by half the toolbar height. */
+  height: 100dvh; max-height: 100dvh;
+  overflow: hidden;
+}
+/* Only when open — `dialog:not([open]) { display: none }` in the UA sheet still has to win. */
+dialog.modal[open] { display: flex; align-items: center; justify-content: center; }
+
+dialog.modal::backdrop {
+  background: rgba(2, 8, 12, 0.62);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  animation: modal-veil 0.22s ease-out;
+}
+
+.modal-panel {
+  width: min(360px, 100%);
+  animation: modal-in 0.24s cubic-bezier(0.22, 1.2, 0.36, 1);
+}
+@keyframes modal-veil {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes modal-in {
+  from { opacity: 0; transform: scale(0.94); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.modal-title { margin: 0 0 4px; font-size: 15px; font-weight: 600; }
+.modal-body { margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--label-2); }
