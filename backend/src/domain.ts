@@ -4,7 +4,12 @@
  * the numbers it produces are the ones the UI renders, so the countdown and oz totals are
  * asserted in `test/domain.test.ts` rather than eyeballed in a browser.
  */
-import { BOTTLE_OZ, type WaterEntry } from "../../shared/types.ts";
+import {
+  BOTTLE_OZ,
+  type PastFast,
+  type PersonalStats,
+  type WaterEntry,
+} from "../../shared/types.ts";
 
 export const MAX_FAST_HOURS = 168; // 7 days — past this, get a doctor, not an app
 export const MIN_FAST_HOURS = 1;
@@ -157,6 +162,90 @@ export function validateLogWater(
   }
 
   return { ok: true, value: { oz: rounded, loggedAt: at } };
+}
+
+/**
+ * One finished fast as `store.getFinishedFasts` reads it out of the database — the raw
+ * columns, before any of the derived numbers the stats page shows.
+ */
+export interface FinishedFastRow {
+  id: string;
+  startedAt: string;
+  targetEndAt: string;
+  endedAt: string;
+  goalOz: number;
+  totalOz: number;
+}
+
+/**
+ * Adds the two derived facts about a finished fast: how long it actually ran, and whether
+ * it got to the planned first meal.
+ *
+ * `durationMs` is measured end-to-start, not from the *plan* — a fast broken at hour 22 of
+ * a planned 36 counts as 22 hours, which is the number that belongs in a personal record.
+ * Clamped at zero so a backdating mistake can't mint a negative record.
+ */
+export function describeFinishedFast(row: FinishedFastRow): PastFast {
+  const started = new Date(row.startedAt).getTime();
+  const ended = new Date(row.endedAt).getTime();
+  const target = new Date(row.targetEndAt).getTime();
+
+  return {
+    id: row.id,
+    startedAt: row.startedAt,
+    targetEndAt: row.targetEndAt,
+    endedAt: row.endedAt,
+    goalOz: row.goalOz,
+    totalOz: row.totalOz,
+    durationMs: Math.max(0, ended - started),
+    reachedTarget: ended >= target,
+  };
+}
+
+/**
+ * Rolls a set of finished fasts up into the stats page's numbers.
+ *
+ * Sorts its own input rather than trusting the caller's ORDER BY, so the summary is a
+ * function of the rows alone and the unit tests mean what they say.
+ *
+ * The sort is a *total* order — start, then end, then id. Two fasts can share a start
+ * instant (end one, then start another backdated to the same time), and ordering on start
+ * alone left the history list free to shuffle between reads.
+ *
+ * Ties on length keep the *earlier* fast as the record: you set it first, and a record that
+ * silently transfers to a later fast of exactly equal length reads as a bug.
+ */
+export function summarizeFasts(rows: readonly FinishedFastRow[]): PersonalStats {
+  const oldestFirst = [...rows].map(describeFinishedFast).sort(
+    (a, b) =>
+      new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime() ||
+      new Date(a.endedAt).getTime() - new Date(b.endedAt).getTime() ||
+      a.id.localeCompare(b.id),
+  );
+
+  let longest: PastFast | null = null;
+  let totalFastedMs = 0;
+  let totalOz = 0;
+  let reachedTargetCount = 0;
+
+  for (const fast of oldestFirst) {
+    if (!longest || fast.durationMs > longest.durationMs) longest = fast;
+    totalFastedMs += fast.durationMs;
+    totalOz += fast.totalOz;
+    if (fast.reachedTarget) reachedTargetCount += 1;
+  }
+
+  const fastsFinished = oldestFirst.length;
+
+  return {
+    history: [...oldestFirst].reverse(),
+    longest,
+    fastsFinished,
+    totalFastedMs,
+    averageFastedMs: fastsFinished ? Math.round(totalFastedMs / fastsFinished) : 0,
+    totalOz: round1(totalOz),
+    reachedTargetCount,
+  };
 }
 
 /**

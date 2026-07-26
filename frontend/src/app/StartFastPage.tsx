@@ -1,11 +1,12 @@
 import { useMemo, useState } from "preact/hooks";
-import type { FamilyMember, StartFastBody } from "@shared/types.ts";
+import type { FamilyMember, PersonalStats, StartFastBody } from "@shared/types.ts";
 import { DEFAULT_GOAL_OZ } from "@shared/types.ts";
 import { GlassCard } from "../components/GlassCard.tsx";
 import { DropIcon } from "../components/Icons.tsx";
 import { Seg } from "../components/Seg.tsx";
 import { longStamp } from "../lib/format.ts";
 import { FamilyStrip } from "./FamilyStrip.tsx";
+import { RecordRow } from "./RecordRow.tsx";
 
 const DURATIONS = [
   { value: 16, label: "16h" },
@@ -29,6 +30,8 @@ export function StartFastPage(props: {
   family: FamilyMember[];
   busy: boolean;
   onStart: (body: StartFastBody) => void;
+  stats: PersonalStats | null;
+  onOpenStats: () => void;
 }) {
   const [hours, setHours] = useState<number>(36);
   const [when, setWhen] = useState<StartWhen>("now");
@@ -135,6 +138,8 @@ export function StartFastPage(props: {
         </GlassCard>
 
         <FamilyStrip members={props.family} />
+
+        <RecordRow stats={props.stats} onOpen={props.onOpenStats} />
       </div>
 
       <p class="note">

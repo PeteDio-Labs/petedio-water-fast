@@ -66,6 +66,51 @@ export interface FamilyView {
   members: FamilyMember[];
 }
 
+/**
+ * A finished fast, as the stats page reads it. No entry log — the history list shows how
+ * long and how much, never the individual drinks; those stay on the fast's own page.
+ *
+ * `durationMs` and `reachedTarget` are derived server-side rather than in the browser, for
+ * the same reason `Fast.totalOz` is: two implementations of "how long was it, really" would
+ * eventually disagree, and the number here is a personal record.
+ */
+export interface PastFast {
+  id: string;
+  /** ISO-8601 UTC. */
+  startedAt: string;
+  /** ISO-8601 UTC — the first meal that was planned when it started. */
+  targetEndAt: string;
+  /** ISO-8601 UTC — always set; only finished fasts appear in history. */
+  endedAt: string;
+  goalOz: number;
+  totalOz: number;
+  /** How long it actually ran: `endedAt − startedAt`, never negative. */
+  durationMs: number;
+  /** True when it ran all the way to the planned first meal. */
+  reachedTarget: boolean;
+}
+
+/**
+ * The personal stats page. Covers *finished* fasts only — a fast still in progress has no
+ * final length yet, so counting it would make the record move around while you watch it.
+ * The page shows the active fast alongside these from `Me.activeFast`, which it already has.
+ */
+export interface PersonalStats {
+  /** Every finished fast, most recent first. */
+  history: PastFast[];
+  /** The longest one, or null until the first fast is broken. Ties keep the earlier fast. */
+  longest: PastFast | null;
+  fastsFinished: number;
+  /** Total time spent fasting across every finished fast, in milliseconds. */
+  totalFastedMs: number;
+  /** Mean finished-fast length in milliseconds; 0 when there are none. */
+  averageFastedMs: number;
+  /** Water logged across every finished fast, in fluid ounces (0.1). */
+  totalOz: number;
+  /** How many finished fasts made it to their planned first meal. */
+  reachedTargetCount: number;
+}
+
 // ---- request bodies ----------------------------------------------------------------------
 
 export interface StartFastBody {

@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from "preact/hooks";
-import type { FamilyMember, Me, StartFastBody } from "@shared/types.ts";
+import type { FamilyMember, Me, PersonalStats, StartFastBody } from "@shared/types.ts";
 import { ApiError, type Backend } from "../lib/api.ts";
 import { phaseOf, progressOf, useNow } from "../lib/clock.ts";
 import { StartFastPage } from "./StartFastPage.tsx";
 import { StatPage } from "./StatPage.tsx";
+import { StatsPage } from "./StatsPage.tsx";
 
 /**
  * The whole app. One decision drives everything: `me.activeFast` is either there (show the
@@ -17,6 +18,11 @@ import { StatPage } from "./StatPage.tsx";
 export function App(props: { backend: Backend }) {
   const [me, setMe] = useState<Me | null>(null);
   const [family, setFamily] = useState<FamilyMember[]>([]);
+  const [stats, setStats] = useState<PersonalStats | null>(null);
+  // The only navigation in the app. A history entry would let the phone's back gesture out
+  // of it, but this is one screen deep off a single-page app behind Access — a state flag
+  // is the whole requirement.
+  const [showStats, setShowStats] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -24,9 +30,18 @@ export function App(props: { backend: Backend }) {
   const now = useNow();
 
   const refresh = useCallback(async () => {
-    const [next, familyView] = await Promise.all([props.backend.me(), props.backend.family()]);
+    // Stats are re-read with everything else so the record is never a step behind the fast
+    // that just changed it — breaking a fast updates this page and that one at once.
+    const [next, familyView, personal] = await Promise.all([
+      props.backend.me(),
+      props.backend.family(),
+      // Secondary, so it fails soft: the record board going missing must not blank the
+      // countdown you actually opened the app for.
+      props.backend.stats().catch(() => null),
+    ]);
     setMe(next);
     setFamily(familyView.members);
+    setStats(personal);
   }, [props.backend]);
 
   useEffect(() => {
@@ -75,6 +90,17 @@ export function App(props: { backend: Backend }) {
     return <div class="loading">Loading…</div>;
   }
 
+  if (showStats && stats) {
+    return (
+      <StatsPage
+        stats={stats}
+        activeFast={me?.activeFast ?? null}
+        displayName={me?.displayName ?? ""}
+        onBack={() => setShowStats(false)}
+      />
+    );
+  }
+
   return (
     <>
       {error && (
@@ -91,6 +117,8 @@ export function App(props: { backend: Backend }) {
           onLogWater={(oz) => mutate(() => props.backend.logWater(me.activeFast!.id, { oz }))}
           onDeleteEntry={(id) => mutate(() => props.backend.deleteWater(id))}
           onEndFast={() => mutate(() => props.backend.endFast(me.activeFast!.id))}
+          stats={stats}
+          onOpenStats={() => setShowStats(true)}
         />
       ) : (
         <StartFastPage
@@ -98,6 +126,8 @@ export function App(props: { backend: Backend }) {
           family={family}
           busy={busy}
           onStart={(body: StartFastBody) => mutate(() => props.backend.startFast(body))}
+          stats={stats}
+          onOpenStats={() => setShowStats(true)}
         />
       )}
     </>

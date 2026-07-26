@@ -11,6 +11,7 @@ import type {
   Fast,
   LogWaterBody,
   Me,
+  PersonalStats,
   StartFastBody,
   WaterEntry,
 } from "@shared/types.ts";
@@ -23,6 +24,8 @@ export interface Backend {
   logWater(fastId: string, body: LogWaterBody): Promise<WaterEntry>;
   deleteWater(entryId: string): Promise<void>;
   family(): Promise<FamilyView>;
+  /** Personal records over finished fasts — the stats page. */
+  stats(): Promise<PersonalStats>;
 }
 
 export class ApiError extends Error {
@@ -91,4 +94,6 @@ export const httpBackend: Backend = {
     request<void>(`/api/water/${encodeURIComponent(entryId)}`, { method: "DELETE" }),
 
   family: () => request<FamilyView>("/api/family"),
+
+  stats: () => request<PersonalStats>("/api/me/stats"),
 };

@@ -5,6 +5,7 @@
  */
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 export function round1(n: number): number {
   return Math.round(n * 10) / 10;
@@ -51,6 +52,24 @@ function isSameDay(a: Date, b: Date): boolean {
 export function logStamp(iso: string, now: Date = new Date()): string {
   const d = new Date(iso);
   return isSameDay(d, now) ? clockTime(d) : `${SHORT[d.getDay()]} ${clockTime(d)}`;
+}
+
+/**
+ * "38h 12m" — how long a fast ran.
+ *
+ * Hours all the way up, never days: the family says "a 36 hour fast", and the app's own
+ * ceiling is 168 hours, so "7d" would be a unit nobody here uses. Rounded to the minute
+ * before splitting, so 59.7 minutes reads as 1h 0m rather than 0h 59m.
+ */
+export function durationLabel(ms: number): string {
+  const minutes = Math.max(0, Math.round(ms / 60_000));
+  return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
+}
+
+/** "Sun 26 Jul" — the history row's date. */
+export function dayStamp(iso: string): string {
+  const d = new Date(iso);
+  return `${SHORT[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`;
 }
 
 /** Splits a duration into the zero-padded pieces the countdown renders. */

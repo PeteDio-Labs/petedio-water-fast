@@ -11,7 +11,7 @@ import type { SQL } from "bun";
 import type { Fast, FamilyMember, WaterEntry, WaterSource } from "../../shared/types.ts";
 import { db, iso, isoOrNull, num } from "./db.ts";
 import { sumOz } from "./domain.ts";
-import type { LogWaterPlan, StartFastPlan } from "./domain.ts";
+import type { FinishedFastRow, LogWaterPlan, StartFastPlan } from "./domain.ts";
 
 export interface User {
   id: string;
@@ -203,6 +203,42 @@ export async function deleteWater(
     RETURNING id
   `;
   return rows.length > 0;
+}
+
+/**
+ * Every fast this user has finished, newest first, with its water total aggregated in SQL.
+ *
+ * Ownership is the WHERE clause as everywhere else. Rolling the numbers up is left to
+ * `summarizeFasts` in domain.ts rather than done in SQL: the aggregates are a personal
+ * record, and pure TypeScript is where they can be unit-tested without a database.
+ * `GROUP BY f.id` is enough — the rest of the SELECT list is functionally dependent on the
+ * primary key.
+ */
+export async function getFinishedFasts(
+  userId: string,
+  sql: SQL = db(),
+): Promise<FinishedFastRow[]> {
+  const rows = await sql`
+    SELECT f.id,
+           f.started_at,
+           f.target_end_at,
+           f.ended_at,
+           f.goal_oz,
+           COALESCE(SUM(w.oz), 0) AS total_oz
+    FROM fasts f
+    LEFT JOIN water_entries w ON w.fast_id = f.id
+    WHERE f.user_id = ${userId} AND f.ended_at IS NOT NULL
+    GROUP BY f.id
+    ORDER BY f.started_at DESC, f.ended_at DESC, f.id DESC
+  `;
+  return rows.map((r: Record<string, unknown>) => ({
+    id: String(r.id),
+    startedAt: iso(r.started_at),
+    targetEndAt: iso(r.target_end_at),
+    endedAt: iso(r.ended_at),
+    goalOz: num(r.goal_oz),
+    totalOz: num(r.total_oz),
+  }));
 }
 
 /**
