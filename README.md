@@ -141,5 +141,6 @@ deploy time. Nothing sensitive lives in this repo.
 
 ## Source of truth
 
-Tracked in Linear (team `PeteDillo`). Infrastructure — the LXC, the database, the tunnel
+Tracked in Linear (team `PeteDillo`), project **Water Fast** — PET-284 (this app), PET-285
+(infrastructure), PET-286/287 (rollout). Infrastructure — the LXC, the database, the tunnel
 route — lives in **petedio-iac**, not here.
