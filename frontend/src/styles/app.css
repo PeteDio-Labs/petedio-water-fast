@@ -1,0 +1,311 @@
+/* Water Fast — the app's own layout, on top of the glass foundation in tokens.css.
+   The information architecture is the original HTML mock's, deliberately unchanged: the
+   vessel and the countdown side by side, the fast's timeline under them, then log-water,
+   then the entry list. What changed is the material. */
+
+.wrap {
+  max-width: 540px;
+  margin: 0 auto;
+  padding: max(20px, env(safe-area-inset-top)) 16px calc(40px + env(safe-area-inset-bottom));
+}
+
+/* ---- top bar ---- */
+.eyebrow {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  font-family: var(--mono);
+  font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--label-3);
+  padding-bottom: 12px; margin-bottom: 18px;
+  border-bottom: 1px solid var(--hairline);
+}
+.eyebrow b { color: var(--state); font-weight: 600; transition: color 0.6s ease; }
+.eyebrow .who {
+  background: none; border: none; padding: 4px 2px; cursor: pointer;
+  font: inherit; letter-spacing: inherit; text-transform: inherit; color: var(--label-3);
+}
+.eyebrow .who:hover { color: var(--label-2); }
+
+/* ---- hero: vessel + countdown ---- */
+.hero { display: flex; gap: 18px; align-items: stretch; padding: 18px 18px 20px; }
+
+.vessel {
+  position: relative; width: 78px; flex: 0 0 78px;
+  border: 1px solid var(--glass-line);
+  border-radius: 6px 6px 12px 12px;
+  background: linear-gradient(180deg, rgba(100, 210, 255, 0.03), rgba(100, 210, 255, 0.10));
+  overflow: hidden;
+}
+.vessel .fill {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 0;
+  background: linear-gradient(180deg, var(--water-deep), #17505f);
+  transition: height 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.vessel .wave {
+  position: absolute; left: -50%; width: 200%; height: 14px; bottom: 0;
+  transform: translateY(-100%); fill: var(--water); opacity: 0.85;
+  animation: drift 7s linear infinite;
+}
+.vessel .wave.b {
+  animation-duration: 11s; animation-direction: reverse; opacity: 0.35; height: 10px;
+}
+@keyframes drift {
+  from { transform: translate(0, -100%); }
+  to { transform: translate(25%, -100%); }
+}
+.vessel .ticks { position: absolute; inset: 0; }
+.vessel .ticks i {
+  position: absolute; left: 0; width: 9px; height: 1px; background: rgba(255, 255, 255, 0.14);
+}
+.vessel .gal {
+  position: absolute; left: 0; right: 0; height: 0;
+  border-top: 1px dashed rgba(255, 159, 10, 0.75);
+}
+.vessel .gal::after {
+  content: "1 GAL"; position: absolute; right: 3px; top: 2px;
+  font-family: var(--mono); font-size: 7px; letter-spacing: 0.1em; color: var(--meal);
+}
+.vessel .amount {
+  position: absolute; left: 0; right: 0; bottom: 10px; text-align: center;
+  font-size: 20px; font-weight: 700; letter-spacing: -0.3px;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.7);
+}
+.vessel .amount span {
+  display: block; font-family: var(--mono); font-size: 7.5px; letter-spacing: 0.14em;
+  color: #bfe4ec; font-weight: 400; margin-top: 1px;
+}
+
+.clock { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+.clock .label {
+  font-family: var(--mono);
+  font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--label-3); margin-bottom: 6px;
+}
+/* Sized to fit "23h 45m 17s" in the space left beside the 78px vessel at 375px wide —
+   the previous 14vw clipped the seconds off the edge of the card. */
+.count {
+  display: flex; align-items: baseline; gap: 0;
+  font-size: clamp(34px, 11.5vw, 54px); font-weight: 200; line-height: 0.92;
+  letter-spacing: -1.5px; font-variant-numeric: tabular-nums;
+  color: var(--label); transition: color 0.6s ease;
+  white-space: nowrap;
+}
+body[data-phase="done"] .count { color: var(--meal); }
+.count .u {
+  font-family: var(--mono); font-size: 0.24em; font-weight: 400;
+  color: var(--label-3);
+  /* The -2px tracking on .count is right for the big numerals but pulls the unit letter
+     into the following digit — reset it here rather than loosening the whole line. */
+  letter-spacing: normal;
+  margin: 0 7px 0 3px;
+  transform: translateY(-0.3em);
+}
+.count .u:last-child { margin-right: 0; }
+.count .sec { color: var(--state); transition: color 0.6s ease; }
+
+.meal-at {
+  margin-top: 14px; font-family: var(--mono); font-size: 11.5px;
+  color: var(--meal); letter-spacing: 0.04em;
+}
+.meal-at .dot {
+  display: inline-block; width: 5px; height: 5px; border-radius: 50%;
+  background: var(--meal); margin-right: 8px; vertical-align: middle;
+  box-shadow: 0 0 10px var(--meal);
+}
+.elapsed {
+  margin-top: 5px; font-family: var(--mono); font-size: 11.5px;
+  color: var(--label-3); letter-spacing: 0.04em;
+}
+.done-msg {
+  margin-top: 14px; font-family: var(--mono); font-size: 12px;
+  color: var(--meal); letter-spacing: 0.04em;
+}
+
+/* ---- timeline ---- */
+.timeline { padding: 0 18px 18px; }
+.track { position: relative; height: 3px; background: rgba(255, 255, 255, 0.12); border-radius: 2px; }
+.track .done {
+  position: absolute; left: 0; top: 0; bottom: 0; border-radius: 2px;
+  background: var(--state); opacity: 0.65; transition: width 1s linear, background 0.6s ease;
+}
+.track .now {
+  position: absolute; top: 50%; width: 11px; height: 11px; border-radius: 50%;
+  background: var(--state); border: 2px solid #05121a;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--state) 70%, transparent);
+  transition: left 1s linear, background 0.6s ease;
+}
+.track .end {
+  position: absolute; right: -1px; top: 50%; width: 9px; height: 9px;
+  background: var(--meal); transform: translate(50%, -50%) rotate(45deg);
+  box-shadow: 0 0 12px rgba(255, 159, 10, 0.6);
+}
+.track .mid { position: absolute; top: -4px; width: 1px; height: 11px; background: rgba(255, 255, 255, 0.14); }
+.stamps {
+  display: flex; justify-content: space-between; margin-top: 10px;
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--label-3);
+}
+.stamps .r { color: var(--meal); }
+
+/* ---- section headers ---- */
+.section-head {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  margin: 26px 4px 10px;
+}
+.section-head h2 {
+  margin: 0; font-family: var(--mono); font-weight: 400;
+  font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--label-3);
+}
+.section-head .meta { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.06em; color: var(--label-3); }
+
+/* ---- goal / target input ---- */
+.target { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 10.5px; color: var(--label-3); }
+.target input {
+  width: 58px; padding: 5px 6px; text-align: center;
+  background: rgba(44, 44, 46, 0.72); border: 1px solid var(--glass-line); border-radius: 7px;
+  color: var(--water); font-family: var(--mono); font-size: 12px;
+}
+.target input:focus { outline: none; border-color: var(--water-deep); }
+.goal-note {
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.05em;
+  color: var(--label-3); margin: 0 4px 12px;
+}
+
+/* ---- quick add ---- */
+.quick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 14px; }
+.quick button {
+  padding: 13px 0 10px; border-radius: 12px;
+  border: 1px solid var(--glass-line); background: rgba(44, 44, 46, 0.72);
+  color: var(--label); font-family: inherit; font-size: 20px; font-weight: 600;
+  cursor: pointer; transition: background 0.15s, border-color 0.15s, transform 0.25s var(--spring);
+}
+.quick button small {
+  display: block; margin-top: 3px; font-family: var(--mono); font-weight: 400;
+  font-size: 8px; letter-spacing: 0.12em; color: var(--label-3);
+}
+.quick button:hover { background: var(--surface-3); border-color: var(--water-deep); }
+.quick button:active { transform: scale(0.95); }
+.quick button:disabled { opacity: 0.4; cursor: default; }
+
+.custom { display: flex; gap: 8px; padding: 0 14px 14px; }
+.custom input {
+  flex: 1; min-width: 0; padding: 12px 13px;
+  background: rgba(44, 44, 46, 0.72); border: 1px solid var(--glass-line);
+  border-radius: 12px; color: var(--label); font-family: var(--mono); font-size: 14px;
+}
+.custom input::placeholder { color: var(--label-3); }
+.custom input:focus { outline: none; border-color: var(--water-deep); }
+.custom button {
+  padding: 0 20px; border-radius: 12px; border: none;
+  background: var(--water-deep); color: #04161c;
+  font-family: var(--mono); font-size: 11px; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer;
+}
+.custom button:hover { background: var(--water); }
+.custom button:disabled { opacity: 0.4; cursor: default; }
+
+/* ---- entry log ---- */
+ul.log { list-style: none; margin: 0; padding: 4px 14px 8px; }
+ul.log li {
+  display: flex; align-items: center; gap: 12px; padding: 11px 2px;
+  border-bottom: 0.5px solid var(--separator); font-family: var(--mono); font-size: 12.5px;
+}
+ul.log li:last-child { border-bottom: none; }
+/* Both columns stay on one line at 375px — the row wrapping was the worst thing about the
+   list on a phone. The time column sizes to its content rather than a fixed width so a
+   multi-day fast ("Sun 10:00 AM") widens it only when it has to. */
+ul.log li .time {
+  color: var(--label-3); letter-spacing: 0.03em;
+  flex: 0 0 auto; white-space: nowrap;
+}
+ul.log li .oz { flex: 1; min-width: 0; color: var(--label); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+ul.log li .src {
+  font-size: 8px; letter-spacing: 0.12em; color: var(--water-deep);
+  border: 1px solid var(--glass-line); border-radius: 4px; padding: 2px 5px;
+}
+ul.log li button {
+  background: none; border: none; color: var(--label-3); cursor: pointer;
+  font-size: 17px; line-height: 1; padding: 4px 7px; border-radius: 6px;
+}
+ul.log li button:hover { color: var(--red); background: rgba(255, 69, 58, 0.12); }
+.empty { padding: 18px 16px; font-size: 13.5px; line-height: 1.5; color: var(--label-3); }
+
+/* ---- family strip ---- */
+.family { display: flex; flex-direction: column; }
+.fam-row {
+  display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+  border-top: 0.5px solid var(--separator);
+}
+.fam-row:first-child { border-top: none; }
+.fam-avatar {
+  width: 34px; height: 34px; flex: none; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; color: #04161c;
+  background: linear-gradient(160deg, var(--water), var(--water-deep));
+}
+.fam-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.fam-text strong { font-size: 15px; font-weight: 600; letter-spacing: -0.2px; }
+.fam-bar { position: relative; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.12); }
+.fam-bar i {
+  position: absolute; left: 0; top: 0; bottom: 0; border-radius: 2px;
+  background: var(--water); transition: width 0.6s ease;
+}
+.fam-meta {
+  font-family: var(--mono); font-size: 10.5px; color: var(--label-3);
+  text-align: right; flex: none; line-height: 1.5;
+}
+.fam-meta b { display: block; color: var(--label-2); font-weight: 600; }
+
+/* ---- start-a-fast page ---- */
+.start-hero { text-align: center; padding: 26px 20px 22px; }
+.start-hero .drop {
+  width: 66px; height: 66px; margin: 0 auto 16px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(100, 210, 255, 0.14); color: var(--water);
+  box-shadow: 0 0 34px rgba(100, 210, 255, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+}
+.start-hero .drop svg { width: 30px; height: 30px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.start-hero h1 { margin: 0 0 6px; font-size: 24px; font-weight: 700; letter-spacing: -0.4px; }
+.start-hero p { margin: 0; font-size: 14.5px; line-height: 1.5; color: var(--label-2); }
+
+.start-body { padding: 0 16px 18px; }
+.preview {
+  margin-top: 16px; padding: 13px 14px; border-radius: var(--r-group);
+  background: rgba(100, 210, 255, 0.09); border: 1px solid rgba(100, 210, 255, 0.22);
+  font-size: 13.5px; line-height: 1.5; color: var(--label);
+}
+.preview b { color: var(--water); }
+
+/* ---- misc ---- */
+.card-pad { padding: 14px; }
+.stack { display: flex; flex-direction: column; gap: 14px; }
+.errbar {
+  margin-bottom: 14px; padding: 11px 13px; border-radius: 10px;
+  background: rgba(255, 69, 58, 0.14); border: 1px solid rgba(255, 69, 58, 0.34);
+  color: #ffb3ab; font-family: var(--mono); font-size: 11.5px; line-height: 1.5;
+}
+.note {
+  margin: 20px 4px 0; padding-left: 12px; border-left: 2px solid var(--hairline);
+  font-size: 11.5px; line-height: 1.6; color: var(--label-3);
+}
+.loading { padding: 60px 0; text-align: center; color: var(--label-3); font-family: var(--mono); font-size: 12px; letter-spacing: 0.1em; }
+
+.demo-banner {
+  position: sticky; top: 0; z-index: 10;
+  /* Opaque-enough backing: a translucent sticky bar let the page scroll through it and
+     read as a rendering bug rather than a banner. */
+  background: #3a2a08;
+  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 159, 10, 0.3);
+  color: var(--meal); font-family: var(--mono); font-size: 10.5px;
+  letter-spacing: 0.12em; text-transform: uppercase; text-align: center; padding: 7px 12px;
+}
+.demo-switch { display: flex; gap: 8px; justify-content: center; padding: 12px 16px 0; }
+.demo-switch button {
+  padding: 7px 14px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--glass-line); background: rgba(44, 44, 46, 0.72);
+  color: var(--label-2); font-family: var(--mono); font-size: 10.5px;
+  letter-spacing: 0.1em; text-transform: uppercase;
+}
+.demo-switch button.on { background: var(--water-deep); color: #04161c; border-color: transparent; }

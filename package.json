@@ -1,0 +1,13 @@
+{
+  "name": "water-fast",
+  "private": true,
+  "type": "module",
+  "workspaces": ["backend", "frontend"],
+  "scripts": {
+    "dev:backend": "cd backend && bun run dev",
+    "dev:frontend": "cd frontend && bun run dev",
+    "build:frontend": "cd frontend && bun run build",
+    "typecheck": "cd backend && bun run typecheck && cd ../frontend && bun run typecheck",
+    "test": "cd backend && bun test"
+  }
+}

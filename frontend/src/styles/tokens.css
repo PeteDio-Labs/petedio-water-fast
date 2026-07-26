@@ -1,0 +1,167 @@
+/* Water Fast — Apple Liquid Glass, ported from petedio-palworld-panel's
+   frontend/src/styles/tokens.css (PET-270). The glass material, the radial state-tint
+   background, the inset-grouped rows, the sheets and the big buttons are the panel's;
+   what changed is the palette (the panel's server-power states become the phases of a
+   fast) and the removal of the panel's one-screen scroll lock, since this app's stat page
+   is genuinely a scrolling document.
+
+   THE STATE TINT: one variable, --state, drives the page's glow, the glass rim highlight
+   and the ring. The panel drove it from server power state; here it is driven by how far
+   through the fast you are (body[data-phase]), so the room warms from water-cyan toward
+   the meal orange as the countdown closes. */
+
+:root {
+  /* Apple dark system colors — exact HIG values */
+  --bg: #000000;
+  --surface: #1c1c1e;
+  --surface-2: #2c2c2e;
+  --surface-3: #3a3a3c;
+  --separator: rgba(84, 84, 88, 0.65);
+  --hairline: rgba(255, 255, 255, 0.08);
+  --label: #ffffff;
+  --label-2: rgba(235, 235, 245, 0.6);
+  --label-3: rgba(235, 235, 245, 0.3);
+
+  --green: #30d158;
+  --red: #ff453a;
+  --orange: #ff9f0a;
+  --blue: #0a84ff;
+
+  /* the mock's two semantic colors, kept: water and the first meal */
+  --water: #64d2ff;
+  --water-deep: #2e7f92;
+  --meal: var(--orange);
+
+  --state: var(--water);
+  --glow: 60%;
+
+  --glass-fill: rgba(255, 255, 255, 0.08);
+  --glass-fill-deep: rgba(22, 22, 28, 0.42);
+  --glass-line: rgba(255, 255, 255, 0.12);
+  --glass-rim: rgba(255, 255, 255, 0.28);
+  --blur: 16px;
+
+  --r-sheet: 28px;
+  --r-hero: 24px;
+  --r-card: 16px;
+  --r-group: 14px;
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html { color-scheme: dark; background: #05121a; }
+html, body { margin: 0; }
+
+body {
+  background:
+    radial-gradient(120% 32% at 50% -8%, color-mix(in srgb, var(--state) calc(var(--glow) * 0.55), transparent) 0%, transparent 78%),
+    radial-gradient(64% 30% at 50% 18%, color-mix(in srgb, var(--state) var(--glow), transparent) 0%, transparent 70%),
+    radial-gradient(44% 34% at 12% 88%, rgba(94, 92, 230, 0.13) 0%, transparent 72%),
+    radial-gradient(38% 30% at 90% 44%, rgba(100, 210, 255, 0.10) 0%, transparent 74%),
+    var(--bg);
+  background-attachment: fixed;
+  color: var(--label);
+  font: 16px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100svh;
+  touch-action: manipulation;
+}
+
+/* The fast's phases. `late` starts warming toward the meal color; `done` commits to it. */
+body[data-phase="early"] { --state: var(--water); --glow: 52%; }
+body[data-phase="mid"]   { --state: var(--water); --glow: 66%; }
+body[data-phase="late"]  { --state: #9ab7c8; --glow: 60%; }
+body[data-phase="done"]  { --state: var(--meal); --glow: 74%; }
+body[data-phase="idle"]  { --state: var(--water-deep); --glow: 26%; }
+
+/* ---- glass material ---- */
+.glass-card {
+  position: relative; isolation: isolate; overflow: hidden;
+  background: rgba(18, 18, 24, 0.26);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(180%);
+  backdrop-filter: blur(var(--blur)) saturate(180%);
+  border: 1px solid var(--glass-line); border-radius: var(--r-card);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.45),
+    inset 0 1px 1px color-mix(in srgb, var(--state) 28%, var(--glass-rim)),
+    inset 0 -1px 1px rgba(255, 255, 255, 0.08);
+  transition: box-shadow 0.6s ease;
+}
+.glass-card::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.02) 30%, transparent 60%);
+  pointer-events: none;
+}
+
+/* ---- inset-grouped list (the panel's Row) ---- */
+.group { background: rgba(44, 44, 46, 0.72); border-radius: var(--r-group); overflow: hidden; }
+.irow {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  min-height: 44px; padding: 9px 14px; border-top: 0.5px solid var(--separator);
+}
+.irow:first-child { border-top: 0; }
+.ik { color: var(--label-2); font-size: 15px; }
+.iv { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
+
+/* ---- segmented control ---- */
+.seg {
+  display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 2px;
+  background: rgba(44, 44, 46, 0.72); border-radius: 12px; padding: 2px;
+}
+.seg button {
+  min-height: 44px; border: none; border-radius: 10px;
+  background: transparent; color: var(--label);
+  font-size: 14px; font-weight: 600; font-family: inherit; font-variant-numeric: tabular-nums;
+  cursor: pointer; transition: background 0.15s;
+}
+.seg button.selected {
+  background: var(--surface-3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35), inset 0 0.5px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* ---- buttons ---- */
+.big-btn {
+  display: block; width: 100%; min-height: 50px; margin-top: 12px;
+  border-radius: 999px; border: none;
+  font-size: 17px; font-weight: 600; font-family: inherit; cursor: pointer; color: #fff;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.25);
+  transition: filter 0.12s, transform 0.25s var(--spring);
+}
+.big-btn:active { transform: scale(0.98); filter: brightness(0.85); }
+.big-btn.go { background: var(--blue); }
+.big-btn.danger { background: var(--red); }
+.big-btn.plain {
+  background: rgba(255, 255, 255, 0.10); box-shadow: none; color: var(--label);
+}
+.big-btn:disabled { opacity: 0.4; cursor: default; }
+
+.field-label {
+  font-family: var(--mono);
+  font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--label-3); margin: 18px 4px 8px;
+}
+
+.hidden { display: none; }
+:focus-visible { outline: 2px solid var(--water); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+}
+
+/* Backdrop-filter is what makes this "glass"; without it the cards would read as flat
+   translucent rectangles over a busy gradient, so fall back to opaque surfaces. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass-card { background: var(--surface); }
+}
+@media (prefers-contrast: more) {
+  body { background: var(--bg); }
+  .glass-card {
+    background: #0a0a0c;
+    -webkit-backdrop-filter: none; backdrop-filter: none;
+    border-color: rgba(255, 255, 255, 0.5);
+    box-shadow: none;
+  }
+  .glass-card::before { display: none; }
+}
