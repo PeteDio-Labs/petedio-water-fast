@@ -62,8 +62,9 @@ export function StartFastPage(props: {
             <div class="drop">
               <DropIcon />
             </div>
+            {/* No subtitle: the two field labels below it already say "How long" and
+                "Starting from", which is what the sentence was explaining. */}
             <h1>Start a fast</h1>
-            <p>Pick how long you're going and how much water you want to drink.</p>
           </div>
 
           <div class="start-body">

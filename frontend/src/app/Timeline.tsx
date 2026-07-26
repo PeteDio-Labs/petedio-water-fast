@@ -22,9 +22,11 @@ export function Timeline(props: { progress: Progress; startedAt: string; targetE
         <div class="end" />
       </div>
 
+      {/* Start stamp only: the first meal is named twice above this — the countdown's
+          "Until first meal" and the stamp beside it — and the orange diamond already
+          marks that end of the track. */}
       <div class="stamps">
         <span>{shortStamp(props.startedAt)}</span>
-        <span class="r">First meal</span>
       </div>
     </div>
   );

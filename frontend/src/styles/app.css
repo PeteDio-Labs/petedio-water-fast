@@ -222,10 +222,6 @@ body[data-phase="done"] .count { color: var(--meal); }
   background: var(--meal); margin-right: 8px; vertical-align: middle;
   box-shadow: 0 0 10px var(--meal);
 }
-.elapsed {
-  margin-top: 5px; font-family: var(--mono); font-size: 11.5px;
-  color: var(--label-3); letter-spacing: 0.04em;
-}
 .done-msg {
   margin-top: 14px; font-family: var(--mono); font-size: 12px;
   color: var(--meal); letter-spacing: 0.04em;
@@ -252,11 +248,10 @@ body[data-phase="done"] .count { color: var(--meal); }
 }
 .track .mid { position: absolute; top: -4px; width: 1px; height: 11px; background: rgba(255, 255, 255, 0.14); }
 .stamps {
-  display: flex; justify-content: space-between; margin-top: 10px;
+  display: flex; margin-top: 10px;
   font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase;
   color: var(--label-3);
 }
-.stamps .r { color: var(--meal); }
 
 /* ---- section headers ---- */
 .section-head {
@@ -277,10 +272,6 @@ body[data-phase="done"] .count { color: var(--meal); }
   color: var(--water); font-family: var(--mono); font-size: 12px;
 }
 .target input:focus { outline: none; border-color: var(--water-deep); }
-.goal-note {
-  font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.05em;
-  color: var(--label-3); margin: 0 4px 12px;
-}
 
 /* ---- quick add ---- */
 .quick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 14px; }
@@ -330,10 +321,6 @@ ul.log li .time {
   flex: 0 0 auto; white-space: nowrap;
 }
 ul.log li .oz { flex: 1; min-width: 0; color: var(--label); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-ul.log li .src {
-  font-size: 8px; letter-spacing: 0.12em; color: var(--water-deep);
-  border: 1px solid var(--glass-line); border-radius: 4px; padding: 2px 5px;
-}
 ul.log li button {
   background: none; border: none; color: var(--label-3); cursor: pointer;
   font-size: 17px; line-height: 1; padding: 4px 7px; border-radius: 6px;
@@ -376,8 +363,7 @@ ul.log li button:hover { color: var(--red); background: rgba(255, 69, 58, 0.12);
   box-shadow: 0 0 34px rgba(100, 210, 255, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.2);
 }
 .start-hero .drop svg { width: 30px; height: 30px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.start-hero h1 { margin: 0 0 6px; font-size: 24px; font-weight: 700; letter-spacing: -0.4px; }
-.start-hero p { margin: 0; font-size: 14.5px; line-height: 1.5; color: var(--label-2); }
+.start-hero h1 { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.4px; }
 
 .start-body { padding: 0 16px 18px; }
 .preview {
