@@ -1,12 +1,13 @@
 import type { Progress } from "../lib/clock.ts";
-import { countdownParts, elapsedLabel, longStamp } from "../lib/format.ts";
+import { countdownParts, longStamp } from "../lib/format.ts";
 
 /**
  * Time until the first meal.
  *
  * `role="timer"` with `aria-live="off"`: the value changes every second, and an assertive
  * live region would make a screen reader read the whole countdown once a second, which is
- * unusable. The meal stamp and the elapsed line carry the same information statically.
+ * unusable. The meal stamp below and the "Hour n of m" in the page header carry the same
+ * information statically.
  */
 export function Countdown(props: { progress: Progress; targetEndAt: string }) {
   const { hh, mm, ss } = countdownParts(props.progress.remainingMs);
@@ -32,13 +33,10 @@ export function Countdown(props: { progress: Progress; targetEndAt: string }) {
       {props.progress.complete ? (
         <div class="done-msg">Fast complete. Go eat.</div>
       ) : (
-        <>
-          <div class="meal-at">
-            <span class="dot" />
-            {longStamp(props.targetEndAt)}
-          </div>
-          <div class="elapsed">{elapsedLabel(props.progress.elapsedMs)}</div>
-        </>
+        <div class="meal-at">
+          <span class="dot" />
+          {longStamp(props.targetEndAt)}
+        </div>
       )}
     </div>
   );

@@ -3,8 +3,6 @@
  * in the viewer's local timezone — the original mock built Dates from local components, so
  * two people in different timezones would have disagreed about when the fast ended.
  */
-import { BOTTLE_OZ, GALLON_OZ } from "@shared/types.ts";
-
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -65,45 +63,16 @@ export function countdownParts(ms: number): { hh: string; mm: string; ss: string
   };
 }
 
-/** "12h 30m fasted" */
-export function elapsedLabel(ms: number): string {
-  const h = Math.floor(ms / 3_600_000);
-  const m = Math.floor((ms % 3_600_000) / 60_000);
-  return `${h}h ${m}m fasted`;
-}
-
-export function toBottles(oz: number): number {
-  return round1(oz / BOTTLE_OZ);
-}
-
-/** "2 bottles", "½ bottle", or null when the amount isn't a clean multiple. */
-export function bottleName(oz: number): string | null {
-  const b = Math.round((oz / BOTTLE_OZ) * 100) / 100;
-  if (b === 1) return "1 bottle";
-  if (b === 0.5) return "½ bottle";
-  if (b === Math.floor(b) && b > 0) return `${b} bottles`;
-  return null;
-}
-
-/** The entry-list line: "2 bottles · 33.8 oz", or just the ounces. */
-export function entryLabel(oz: number): string {
-  const name = bottleName(oz);
-  return name ? `${name}  ·  ${oz} oz` : `${oz} oz`;
-}
-
-/** "8.6 bottles · 1 gal + 1 bottle → 111.1 oz to go (6.6 bottles)" */
+/**
+ * "111.1 oz to go" — the one thing about the goal you can't read off the page already.
+ *
+ * This used to restate the goal itself ("8.6 bottles · 1 gal + 1 bottle") and convert the
+ * remainder back into bottles. Both were already on screen: the vessel's dashed 1 GAL mark
+ * is the goal, and the section meta counts the bottles.
+ */
 export function goalNote(goalOz: number, totalOz: number): string {
-  const bottles = round1(goalOz / BOTTLE_OZ);
-  const shape =
-    goalOz >= GALLON_OZ
-      ? `1 gal + ${round1((goalOz - GALLON_OZ) / BOTTLE_OZ)} bottle`
-      : `${round1(goalOz / GALLON_OZ)} gal`;
-
   const left = round1(Math.max(0, goalOz - totalOz));
-  const tail =
-    left > 0 ? `${left} oz to go (${round1(left / BOTTLE_OZ)} bottles)` : "target met";
-
-  return `${bottles} bottles · ${shape}  →  ${tail}`;
+  return left > 0 ? `${left} oz to go` : "Target met";
 }
 
 /** Initial for the family-strip avatar. */

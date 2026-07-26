@@ -18,9 +18,6 @@ export function FamilyStrip(props: { members: FamilyMember[] }) {
     <>
       <div class="section-head">
         <h2>Fasting with you</h2>
-        <span class="meta">
-          {props.members.length} {props.members.length === 1 ? "person" : "people"}
-        </span>
       </div>
 
       <GlassCard class="family">

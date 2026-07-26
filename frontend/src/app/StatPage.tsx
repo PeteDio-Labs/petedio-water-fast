@@ -2,7 +2,7 @@ import { useState } from "preact/hooks";
 import type { FamilyMember, Fast } from "@shared/types.ts";
 import { GlassCard } from "../components/GlassCard.tsx";
 import { progressOf, useNow } from "../lib/clock.ts";
-import { goalNote, toBottles } from "../lib/format.ts";
+import { goalNote } from "../lib/format.ts";
 import { Countdown } from "./Countdown.tsx";
 import { FamilyStrip } from "./FamilyStrip.tsx";
 import { LogWater } from "./LogWater.tsx";
@@ -58,22 +58,19 @@ export function StatPage(props: {
         </GlassCard>
 
         <div>
+          {/* Just what's left. The running total is the vessel's number, in 20px type a
+              thumb's width above this line; pairing it with a bottle count here wrapped
+              the heading onto two lines at 320px and said nothing new. */}
           <div class="section-head">
             <h2>Water logged</h2>
-            <span class="meta">
-              {toBottles(props.fast.totalOz)} bottles · {props.fast.totalOz} oz
-            </span>
+            <span class="meta">{goalNote(props.fast.goalOz, props.fast.totalOz)}</span>
           </div>
-          <p class="goal-note">{goalNote(props.fast.goalOz, props.fast.totalOz)}</p>
           <LogWater busy={props.busy} onLog={props.onLogWater} />
         </div>
 
         <div>
           <div class="section-head">
             <h2>Entries</h2>
-            <span class="meta">
-              {props.fast.entries.length} {props.fast.entries.length === 1 ? "entry" : "entries"}
-            </span>
           </div>
           <WaterLog entries={props.fast.entries} onDelete={props.onDeleteEntry} />
         </div>
@@ -114,11 +111,6 @@ export function StatPage(props: {
           )}
         </div>
       </div>
-
-      <p class="note">
-        Everything you log is saved to your account and shared across your devices. The family
-        strip shows only how far along everyone is — never their entries.
-      </p>
     </>
   );
 }
