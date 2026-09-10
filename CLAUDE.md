@@ -1,8 +1,10 @@
 # petedio-water-fast (Agent Context)
 
-Water-fasting tracker for the Delgadillo family (Pedro, Sonia, Michelle, Marcos). Public at
-`fast.pdlab.dev`, native Bun service on **LXC 243 (`waterfast-243`)**, data in the
-`waterfast` DB on **postgres-rds-231**. Grew out of a single-file HTML mock — the layout is
+Water-fasting tracker for the Delgadillo family (Pedro, Sonia, Michelle, Marcos). Built as a native
+Bun service behind `fast.pdlab.dev`, with data in the `waterfast` DB on **postgres-rds-231**.
+**It has no host today**: `waterfast-243` and its route were removed on 2026-08-24 (PET-306),
+and `deploy.yml` still runs on merge, matches zero hosts, and goes green (PET-387 decides
+rebuild or retire). Grew out of a single-file HTML mock — the layout is
 carried over deliberately.
 
 ## Stack & rules
@@ -69,7 +71,7 @@ thing. A green suite is not proof the page works; that lesson is in the workspac
 
 ## Source of truth
 
-- **Linear** (`PeteDillo`/`PET`) — issues and plans.
+- **Plane** (workspace `petedio`, project `PET`) — work items. Linear is read-only history.
 - **petedio-iac** — the LXC, the database, the tunnel route, the Ansible deploy. Infra
   changes go there, never here.
 

@@ -4,8 +4,9 @@ A water-fasting tracker for the Delgadillo family. You sign in through Authentik
 app either shows the fast you're already in — countdown to your first meal, water logged,
 who else is fasting with you — or offers to start one.
 
-Public at **`fast.pdlab.dev`**, running natively on **LXC 243 (`waterfast-243`)**, with data
-in the `waterfast` database on **postgres-rds-231**.
+Built to run natively on an LXC declared in petedio-iac, behind **`fast.pdlab.dev`**, with
+data in the `waterfast` database on **postgres-rds-231**. The host, `waterfast-243`, was
+removed on 2026-08-24 (PET-306); the app is undeployed until one is declared again.
 
 > Grew out of a single-file HTML mock that stored one hardcoded fast in browser storage.
 > The layout — the water column, the countdown, the timeline, the bottle buttons — is
@@ -134,13 +135,15 @@ confusing failure to debug after the fact.
 
 ## Deployment
 
-Native Bun systemd service on LXC 243, provisioned by petedio-iac's
-`ansible/playbooks/configure-water-fast.yml`. Config — the database password and the
+Native Bun systemd service provisioned by petedio-iac's
+`ansible/playbooks/configure-water-fast.yml` (`hosts: waterfast`). ⚠ No inventory file has
+defined that group since PET-306, so `deploy.yml` reports success having deployed nothing
+(PET-387). Declare the host before reading a green run as a deploy. Config — the database password and the
 Cloudflare Access team domain and AUD — comes from Vault (`kv/services/water-fast`) at
 deploy time. Nothing sensitive lives in this repo.
 
 ## Source of truth
 
-Tracked in Linear (team `PeteDillo`), project **Water Fast** — PET-284 (this app), PET-285
+Tracked in Plane (project `PET`); the Linear board these were filed on is read-only history. PET-284 (this app), PET-285
 (infrastructure), PET-286/287 (rollout). Infrastructure — the LXC, the database, the tunnel
 route — lives in **petedio-iac**, not here.
