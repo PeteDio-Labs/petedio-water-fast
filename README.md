@@ -137,8 +137,9 @@ confusing failure to debug after the fact.
 
 Native Bun systemd service provisioned by petedio-iac's
 `ansible/playbooks/configure-water-fast.yml` (`hosts: waterfast`). ⚠ No inventory file has
-defined that group since PET-306, so `deploy.yml` reports success having deployed nothing
-(PET-387). Declare the host before reading a green run as a deploy. Config — the database password and the
+defined that group since PET-306. `deploy.yml` therefore runs on demand only, and it refuses
+when the inventory matches no host (PET-387). To deploy on merge again, declare the host in
+petedio-iac and restore the push trigger. Config — the database password and the
 Cloudflare Access team domain and AUD — comes from Vault (`kv/services/water-fast`) at
 deploy time. Nothing sensitive lives in this repo.
 
